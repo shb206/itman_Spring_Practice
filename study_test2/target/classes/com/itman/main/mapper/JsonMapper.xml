@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.itman.main.mapper.JsonMapper">
+	
+	<select id="selectAll" resultType="hashMap">
+		SELECT * FROM EVSEARCHLIST
+	</select>
+	
+	<delete id="deleteJson" parameterType="int">
+		DELETE FROM EVSEARCHLIST
+		WHERE cpId = #{cpId}
+	</delete>
+	
+	<insert id="insertParseJson" parameterType="hashmap">
+		<foreach collection="list" item="item" separator=";">
+			INSERT INTO EVSEARCHLIST (
+				cpId,
+				csId,
+				csNm,
+				cpNm,
+				chargeTp,
+				addr,
+				cpStat,
+				cpTp,
+				lat,
+				longi,
+				statUpdatetime
+			)
+			VALUES (
+				#{item.cpId},
+				#{item.csId},
+				#{item.csNm},
+				#{item.cpNm},
+				#{item.chargeTp},
+				#{item.addr},
+				#{item.cpStat},
+				#{item.cpTp},
+				#{item.lat},
+				#{item.longi},
+				#{item.statUpdatetime}
+			)
+		</foreach>
+	</insert>
+</mapper>

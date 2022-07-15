@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.itman.main.mapper.TestMapper">
+	<select id="selectVersion" resultType="String">
+		SELECT VERSION()
+	</select>
+	
+	<select id="selectStudentAll" resultType="hashMap">
+		SELECT * FROM STUDENT
+	</select>
+	
+	<!-- <select id="selectStudentAllEgo" resultType="egovMap">
+		SELECT * FROM STUDENT
+	</select> -->
+	
+	<select id="selectTest" parameterType="hashMap" resultType="hashMap">
+		SELECT * FROM STUDENT
+		WHERE ${type} = #{content}
+	</select>
+	
+	<select id="selectName" parameterType="hashMap" resultType="hashMap">
+		SELECT * FROM STUDENT
+		WHERE NAME LIKE '%${content}%'
+	</select>
+	
+	<delete id="deleteTest" parameterType="int">
+		DELETE FROM STUDENT
+		WHERE IDX = #{idx}
+	</delete>
+	
+	<update id="updateTest" parameterType="Student">
+		UPDATE STUDENT
+		SET
+		NAME = #{name},
+		CODE = #{code},
+		SCORE = #{score}
+		WHERE IDX = #{idx}
+	</update>
+	
+	<insert id="insertTest" parameterType="Student">
+		INSERT STUDENT(
+			IDX,
+			NAME,
+			CODE,
+			SCORE
+		)
+		VALUES (
+			#{idx},
+			#{name},
+			#{code},
+			#{score}
+		)
+	</insert>
+</mapper>
