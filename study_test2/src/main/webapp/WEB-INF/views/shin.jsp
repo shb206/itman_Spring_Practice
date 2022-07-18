@@ -5,11 +5,17 @@
 <head>
 	<link rel="stylesheet" href="/resources/css/tui-grid.css"/>
 	<link rel="stylesheet" href="/resources/css/dropDown.css"/>
+	
 	<script src="/resources/js/jquery-3.1.1.js"></script>
 	<script src="/resources/js/grid/tui-grid.js"></script>
 	<script src="/resources/js/cmm/comtran.js"></script>
 	<script src="/resources/js/testAjax.js"></script>
 	<script src="/resources/js/dropDown.js"></script>
+	
+	<!-- toast-ui-charts -->
+	<link rel="stylesheet" href="https://uicdn.toast.com/chart/latest/toastui-chart.min.css" />
+	<script src="https://uicdn.toast.com/chart/latest/toastui-chart.min.js"></script>
+	<script src="/resources/js/chart-test.js"></script>
 	
 <meta charset="UTF-8">
 <title>Spring SQL Test Page</title>
@@ -20,8 +26,10 @@
 	MariaDB 버전 => ${myb} <br>
 
 	<input type="button" id="reset_btn" value="초기화"/>
+	<input type="button" id="test_btn" value="csv 저장"/>
+	<input type="button" id="chart_btn" value="차트 그리기"/> <br>
 	
-	<div id="gridArea">
+	<div id="gridArea" style="width:60%; float:left;">
 		<div style="float: right;">
 			<div class="dropdown">
   				<button onclick="search_func();" class="dropbtn" id="search_btn">▼ 검색메뉴</button>
@@ -41,6 +49,7 @@
 		
 		<div id="grid" style="border: 1px solid red;"></div>
 	</div>
+	<div id="chart" style="width:30%; float:left;"></div>
 	
 	<form name="hiddenForm" id="hiddenForm">
 		<input type="hidden" id="h_idx"> <br>

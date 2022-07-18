@@ -36,7 +36,7 @@ function initPrams(){
 	// # 그리드 생성
 	grid = new tui.Grid({
 	    el: document.getElementById("grid")
-	    , scrollX: false
+	    , scrollX: true
 	    , scrollY: true
 	    , bodyHeight: 650
 		, rowHeaders: ['checkbox','rowNum']

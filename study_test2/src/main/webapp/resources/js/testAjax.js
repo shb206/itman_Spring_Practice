@@ -1,6 +1,7 @@
 // 전역 변수
 var grid = null;
 let gridList=[];
+let check = true;
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 기본 세팅 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 $(function(){
 	initPrams();
@@ -193,12 +194,51 @@ window.updatePop = function() {
 		"score" : $("#h_score").val() }
 	gf_Transaction_min("updatePop", "/updateTest", "POST", data, 1);
 }
-
+function listMapToJson(list) {
+	let csv_str = "";
+	csv_str += "idx,name,code,score\n";
+	list.forEach(data => {
+		csv_str += data["idx"];
+		csv_str += ",";
+		csv_str += data["name"];
+		csv_str += ",";
+		csv_str += data["code"];
+		csv_str += ",";
+		csv_str += data["score"];
+		csv_str += "\n";
+	})
+	return csv_str;
+}
 // ~~~~~~~~~~~~~~~~~~~~~~~~~ 버튼 클릭 이벤트  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 $(document).ready(function() {
 	$("#reset_btn").on("click",function(event){
 		event.preventDefault();
 		tui_showInfo();
+	});
+	$("#csv_btn").on("click",function(event){
+		grid.checkAll();
+		let checkList = grid.getCheckedRows();
+		let list = [];
+		checkList.forEach(e => {
+			var data = {
+				"idx" : e["IDX"],
+				"name" : e["NAME"],
+				"code" : e["CODE"],
+				"score" : e["SCORE"] }
+			list.push(data);
+		});
+		let str_csv = listMapToJson(list);
+		
+		// https://developer.mozilla.org/ko/docs/Web/API/URL/createObjectURL
+		var downloadLink = document.createElement("a");
+		var blob = new Blob([str_csv], { type: "text/csv;charset=utf-8" });
+		var url = URL.createObjectURL(blob);
+		downloadLink.href = url;
+		downloadLink.download = "data.csv";
+
+		document.body.appendChild(downloadLink);
+		downloadLink.click();
+		document.body.removeChild(downloadLink);
 	});
     $("#select_btn").on("click",function(event){
 		event.preventDefault();
@@ -220,7 +260,6 @@ $(document).ready(function() {
 			gf_Transaction_min("selectPop", "/selectTest", "POST", data, 1);
 		}
 	});
-	
     $("#insert_btn").on("click",function(event){
 		event.preventDefault();
 		window.open("/insert_subView", "insert_popup", "width = 500, height = 500");
@@ -234,12 +273,12 @@ $(document).ready(function() {
 	$("#delete_btn").on("click",function(event){
 		event.preventDefault();
 		// 체크를 하나도 안했을 경우
-		if(gridList.length === 0)
+		if(grid.getCheckedRows().length === 0)
 			alert("하나 이상의 학생을 체크해주세요");
         
 		// 체크리스트(griList)의 값을 index list로 변경
 		idxList = [];
-		gridList.forEach(e => idxList.push(e["IDX"]));
+		grid.getCheckedRows().forEach(e => idxList.push(e["IDX"]));
 		var queryString = {"Message" : idxList};
 		
 		gf_Transaction_min("delete", "/deleteTest", "POST", queryString, 1);
