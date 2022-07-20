@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.itman.HIOX.mapper.HioxMapper">
+	<select id="getTotalCount" resultType="int">
+		SELECT COUNT(*) FROM HIOX_TEST
+	</select>
+	
+	<select id="selectAll" parameterType="int" resultType="hashMap">
+		SELECT 
+			choose, 
+			date_format(receive_date, '%Y-%m-%d %T') as receive_date,
+			texture,
+			thickness,
+			size,
+			release_a,
+			date_format(release_date, '%Y-%m-%d %T') as release_date
+		FROM 
+			HIOX_TEST
+		LIMIT 10 OFFSET #{value}
+	</select>
+	
+	<select id="select" parameterType="hashMap" resultType="hashMap">
+		SELECT 
+			choose, 
+			date_format(receive_date, '%Y-%m-%d %T') as receive_date,
+			texture,
+			thickness,
+			size,
+			release_a,
+			date_format(release_date, '%Y-%m-%d %T') as release_date
+		FROM 
+			HIOX_TEST
+		<where>
+			<if test="texture != null">AND texture = #{texture}</if>
+			<if test="thickness != null">AND thickness = #{thickness}</if>
+			<if test="size != null">AND size = #{size}</if>
+			 AND date_format(receive_date, '%Y-%m-%d') <![CDATA[ >= ]]> #{start_date}
+			 AND date_format(receive_date, '%Y-%m-%d') <![CDATA[ <= ]]> #{end_date}
+		</where>
+	</select>
+	
+	<select id="cd_List" resultType="hashMap">
+		SELECT COMM_GRP_CD, COMM_CD_NM
+		FROM cd_test
+	</select>
+	
+	<update id="releaseHiox" parameterType="list">
+		UPDATE hiox_test
+		SET release_a = 1
+		WHERE choose in
+		<foreach collection='list' item='data' open='(' close=')' separator=','>
+			#{data}
+		</foreach>
+	</update>
+	
+	<update id="releaseCancelHiox" parameterType="list">
+		UPDATE hiox_test
+		SET release_a = 0
+		WHERE choose in
+		<foreach collection='list' item='data' open='(' close=')' separator=','>
+			#{data}
+		</foreach>
+	</update>
+</mapper>

@@ -11,8 +11,21 @@ $(function(){
 
 // 전체 리스트 표시
 function tui_showInfo() {
-	var queryString = {"Message" : "showInfo"};
-	gf_Transaction_min("show_info", "/selectAll", "POST", queryString, 1)
+	var urlString = window.location.href;
+	const url = new URL(urlString);
+	var page = url.searchParams.get('page') === null ? 1 : url.searchParams.get('page');
+	
+	// 마지막 페이지 파라미터 가져와서 최대 페이지 다음 페이지는 안보아게 하기
+	//if(page > "${lastPage}") {
+	//	page = "${lastPage}";
+	//}
+	
+	var queryString = {
+		"Message" : "showInfo",
+		"page" : page
+	};
+	
+	gf_Transaction_min("show_info", "/selectHioxAll", "POST", queryString, 1);
 }
 
 function initDatas(){
@@ -21,23 +34,24 @@ function initDatas(){
 
 function initPrams(){
 		var cols = [
-		{ header: '학번', name: 'IDX', align: 'center', sortable: true }
-	  , { header: '이름', name: 'NAME', align: 'center', sortable: true}
-      , { header: '과목 코드', name: 'CODE', align: 'center', sortable: true}
-      , { header: '점수', name: 'SCORE', align: 'center', sortable: true }
-
+		{ header: '선택', name: 'choose', align: 'center', sortable: true }
+	  , { header: '입고일시', name: 'receive_date', align: 'center', sortable: true}
+      , { header: '재질', name: 'texture', align: 'center', sortable: true}
+      , { header: '두께', name: 'thickness', align: 'center', sortable: true }
+	  , { header: '크기', name: 'size', align: 'center', sortable: true }	
+	  , { header: '출고여부', name: 'release_a', align: 'center', sortable: true }
+	  , { header: '출고일', name: 'release_date', align: 'center', sortable: true }
 	];
 	// # 그리드 생성
 	grid = new tui.Grid({
 	    el: document.getElementById("grid")
 	    , scrollX: false
 	    , scrollY: true
-	    , bodyHeight: 650
+	    //, bodyHeight: 650
 		, rowHeaders: ['checkbox','rowNum']
 	    //, selectionUnit: "row"
 	    , columns: cols
 	});
-	
 }
 
 function initEvents(){
@@ -134,18 +148,13 @@ function f_callback(trId, data){
 	switch(trId) {
 		case "show_info" :
 			grid.resetData(data["SUCC"]);
-			console.log(data["SUCC"]);
-		case "selectPop" :
+			break;
+		case "searchHiox" :
 			grid.resetData(data["SUCC"]);
 			break;
-		case "insertPop" :
-			tui_showInfo();
+		case "releaseHiox" :
+			grid.resetData(data["SUCC"]);
 			break;
-		case "updatePop" :
-			tui_showInfo();
-			break;
-		case "delete" :
-			tui_showInfo();
 	}
 }
 // grid 더블클릭 이벤트로 들어온 객체 정보를 hidden 필드에 저장
@@ -158,42 +167,11 @@ function update_Ready(el) {
 	window.open("/update_subView", "update_popup", "width = 500, height = 500");
 }
 
-function val_change(data) {
-	switch(data) {
-		case "학번" :
-			return "idx";
-		case "이름" :
-			return "name";
-		case "과목 코드" :
-			return "code";
-		case "점수" :
-			return "score";
-		default :
-			return "▼ 검색메뉴";
-	}
-}
-
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ 팝업 창 연동 함수 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 // 팝업 창으로 넘어온 값이 메인 페이지의 hidden 필드에 저장됨
 window.selectPop = function() {
 	var queryString = {"Message" : $("#h_idx").val()};
 	gf_Transaction_min("selectPop", "/selectTest", "POST", queryString, 1);
-}
-window.insertPop = function() {
-	var data = {
-		"idx" : $("#h_idx").val(),
-		"name" : $("#h_name").val(),
-		"code" : $("#h_code").val(),
-		"score" : $("#h_score").val() }
-	gf_Transaction_min("insertPop", "/insertTest", "POST", data, 1);
-}
-window.updatePop = function() {
-	var data = {
-		"idx" : $("#h_idx").val(),
-		"name" : $("#h_name").val(),
-		"code" : $("#h_code").val(),
-		"score" : $("#h_score").val() }
-	gf_Transaction_min("updatePop", "/updateTest", "POST", data, 1);
 }
 function listMapToJson(list) {
 	let csv_str = "";
@@ -216,61 +194,39 @@ $(document).ready(function() {
 		event.preventDefault();
 		tui_showInfo();
 	});
-	$("#csv_btn").on("click",function(event){
-		grid.checkAll();
-		let checkList = grid.getCheckedRows();
-		let list = [];
-		checkList.forEach(e => {
-			var data = {
-				"idx" : e["IDX"],
-				"name" : e["NAME"],
-				"code" : e["CODE"],
-				"score" : e["SCORE"] }
-			list.push(data);
-		});
-		let str_csv = listMapToJson(list);
-		
-		// https://developer.mozilla.org/ko/docs/Web/API/URL/createObjectURL
-		var downloadLink = document.createElement("a");
-		var blob = new Blob([str_csv], { type: "text/csv;charset=utf-8" });
-		var url = URL.createObjectURL(blob);
-		downloadLink.href = url;
-		downloadLink.download = "data.csv";
-
-		document.body.appendChild(downloadLink);
-		downloadLink.click();
-		document.body.removeChild(downloadLink);
-	});
-    $("#select_btn").on("click",function(event){
+	$("#search_btn").on("click",function(event){
 		event.preventDefault();
-		//window.open("/select_subView", "select_popup", "width = 500, height = 500");
-		
-		var btn = document.getElementById("search_btn");
-		var content = $("#search_field").val()
 		var data = {
-			"type" : val_change(btn.innerText),
-			"content" : content
-			}
-		if(data["type"] === "▼ 검색메뉴") {
-			alert("검색할 필드를 선택해주세요");
+			"start_date" : $("#start_date").val(),
+			"end_date" : $("#end_date").val(),
+			"texture" : $("#texture").val(),
+			"thickness" : $("#thickness").val(),
+			"size" : $("#size").val()
 		}
-		else if(data["content"].length === 0) {
-			alert("검색할 내용을 입력해주세요");
-		}
-		else {
-			gf_Transaction_min("selectPop", "/selectTest", "POST", data, 1);
-		}
+		//console.log(data);
+		gf_Transaction_min("searchHiox", "/selectHiox", "POST", data, 1);
 	});
-    $("#insert_btn").on("click",function(event){
+	$("#release_btn").on("click",function(event){
 		event.preventDefault();
-		window.open("/insert_subView", "insert_popup", "width = 500, height = 500");
+		chooseList = [];
+		grid.getCheckedRows().forEach(e => chooseList.push(e["choose"])); // 기본키로 바꿀것
+		var queryString = {
+			"Message" : chooseList,
+			"release" : "release"
+			};
+		gf_Transaction_min("releaseHiox", "/releaseHiox", "POST", queryString, 1);
+	});
+	$("#release_cancel_btn").on("click",function(event){
+		event.preventDefault();
+		chooseList = [];
+		grid.getCheckedRows().forEach(e => chooseList.push(e["choose"])); // 기본키로 바꿀것
+		var queryString = {
+			"Message" : chooseList,
+			"release" : "cancel"
+			};
+		gf_Transaction_min("releaseHiox", "/releaseHiox", "POST", queryString, 1);
 	});
 	/*
-    $("#update_btn").on("click",function(event){
-		event.preventDefault();
-		window.open("/update_subView", "update_popup", "width = 500, height = 500");
-	});
-	*/
 	$("#delete_btn").on("click",function(event){
 		event.preventDefault();
 		// 체크를 하나도 안했을 경우
@@ -279,13 +235,10 @@ $(document).ready(function() {
         
 		// 체크리스트(griList)의 값을 index list로 변경
 		idxList = [];
-		grid.getCheckedRows().forEach(e => idxList.push(e["IDX"]));
+		grid.getCheckedRows().forEach(e => idxList.push(e["IDX"])); // 기본키로 바꿀것
 		var queryString = {"Message" : idxList};
 		
 		gf_Transaction_min("delete", "/deleteTest", "POST", queryString, 1);
 	});
-	$(".dropMenu").on("click",function(event){
-		var btn = document.getElementById("search_btn");
-		btn.innerText = $(this).val();
-	});
+	*/
 })
