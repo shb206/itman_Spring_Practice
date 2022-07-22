@@ -20,7 +20,7 @@
 				color:#000000; width:200px; height:30px; line-height:30px; text-align:center;}
 		table { width : 100%; text-align:center;}
 		select { width:100px; height:20px; margin-left:10px; margin-right:10px;}
-		.page { padding:5px; }
+		.page { margin:3px; width:30px; height:30px; }
 	</style>
 <meta charset="UTF-8">
 <title>HIOX Practice Page</title>
@@ -69,24 +69,15 @@
 		<button id="reset_btn">초기화</button>
 		<!-- 페이징 버튼 영역 -->
 		<div style="text-align:center;">
-			<button id="firstPage">◀◀ </button>
-			<button id="prevPageList">◀ </button>
+			<button class="pagebtn" id="firstPage">◀◀ </button>
+			<button class="pagebtn" id="prevPageList">◀ </button>
 			
 			<!-- 페이징 버튼 생성 영역 -->
 			<div id="pagingArea" style="display:inline;"></div>
 			
-			<button id="nextPageList">▶ </button>
-			<button id="lastPage">▶▶ </button>
+			<button class="pagebtn" id="nextPageList">▶ </button>
+			<button class="pagebtn" id="lastPage">▶▶ </button>
 		</div>
 	</div>
-	
-	<form name="hiddenForm" id="hiddenForm">
-		<input type="hidden" id="h_page"> <br>
-		<input type="hidden" id="h_texture"> <br>
-		<input type="hidden" id="h_thickness"> <br>
-		<input type="hidden" id="h_size"> <br>
-		<input type="hidden" id="h_start_date"> <br>
-		<input type="hidden" id="h_end_date"> <br>
-	</form>
 </body>
 </html>

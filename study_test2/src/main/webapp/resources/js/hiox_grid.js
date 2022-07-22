@@ -2,7 +2,7 @@
 var grid = null;
 let gridList=[];
 let dataMap = new Map();
-let pageFirstLast = new Map();
+let pageData = new Map();
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 기본 세팅 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 $(function(){
 	initPrams();
@@ -13,6 +13,7 @@ $(function(){
 function initDatas(){
 	dataMap.clear();
 	var data = { "page" : 1 };
+	pageData.set("currentPage", 1);
 	gf_Transaction_min("searchHiox", "/selectHiox", "POST", data, 1);
 }
 
@@ -52,29 +53,7 @@ function initEvents(){
 		var el = grid.getRow(e.rowKey);
 		update_Ready(el);
 	});
-	
-	// # 체크박스 체크
-	grid.on('check', function(e){
-		grid.setSelectionRange({
-			  start:[e.rowKey, 0]
-			, end:[e.rowKey, grid.getColumns().length]
-		});
-		gridList.push(grid.getRow(e.rowKey));
-	});
-	
-	// # 체크박스 체크 해제
-	grid.on("uncheck", function(e){
-		grid.getRow(e.rowKey);
-		
-		// 체크 해제한 항목을 체크 리스트에서 삭제
-		Array.from(gridList).forEach(li => {
-		    if(li["rowKey"] === e.rowKey) {
-			    var idx = gridList.indexOf(li);
-			    if(idx > -1) {
-				    gridList.splice(idx, 1);
-			    }
-		    }})
-	});
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~ 버튼 클릭 이벤트  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	$("#reset_btn").on("click",function(event){
 		event.preventDefault();
 		
@@ -85,47 +64,33 @@ function initEvents(){
 		
 		getURL();
 		var data = Object.fromEntries(dataMap);
+		pageData.set("currentPage", 1);
 		gf_Transaction_min("searchHiox", "/selectHiox", "POST", data, 1);
 	});
 	// 페이지 버튼 클릭 이벤트
 	$("#pagingArea").on("click",".page", function(){
 		event.preventDefault();
-
-		dataMap.set("page", this.value);
-	 	var data = Object.fromEntries(dataMap);
-	 	gf_Transaction_min("searchHiox", "/selectHiox", "POST", data, 1);
+		pageSetAndTrans(this.value);
 	});
 	// 첫번째 페이지로
 	$("#firstPage").on("click",function(event){
 		event.preventDefault();
-		
-		dataMap.set("page", 1);
-		var data = Object.fromEntries(dataMap);
-	 	gf_Transaction_min("searchHiox", "/selectHiox", "POST", data, 1);
+		pageSetAndTrans(1);
 	});
 	// 이전 페이지 리스트
 	$("#prevPageList").on("click",function(event){
 		event.preventDefault();
-		
-		dataMap.set("page", pageFirstLast.get("firstPage")-1);
-		var data = Object.fromEntries(dataMap);
-	 	gf_Transaction_min("searchHiox", "/selectHiox", "POST", data, 1);
+		pageSetAndTrans(pageData.get("firstPage")-1)
 	});
 	// 다음 페이지 리스트
 	$("#nextPageList").on("click",function(event){
 		event.preventDefault();
-		
-		dataMap.set("page", pageFirstLast.get("lastPage")+1);
-		var data = Object.fromEntries(dataMap);
-	 	gf_Transaction_min("searchHiox", "/selectHiox", "POST", data, 1);
+		pageSetAndTrans(pageData.get("lastPage")+1)
 	});
 	// 마지막 페이지로
 	$("#lastPage").on("click",function(event){
 		event.preventDefault();
-		
-		dataMap.set("page", 99999999);
-		var data = Object.fromEntries(dataMap);
-	 	gf_Transaction_min("searchHiox", "/selectHiox", "POST", data, 1);
+		pageSetAndTrans(99999999);
 	});
 	$("#release_btn").on("click",function(event){
 		event.preventDefault();
@@ -133,7 +98,8 @@ function initEvents(){
 		grid.getCheckedRows().forEach(e => chooseList.push(e["choose"])); // 기본키로 바꿀것
 		var queryString = {
 			"Message" : chooseList,
-			"release" : "release"
+			"release" : "release",
+			"page" : pageData.get("currentPage")
 			};
 		gf_Transaction_min("releaseHiox", "/releaseHiox", "POST", queryString, 1);
 	});
@@ -143,25 +109,23 @@ function initEvents(){
 		grid.getCheckedRows().forEach(e => chooseList.push(e["choose"])); // 기본키로 바꿀것
 		var queryString = {
 			"Message" : chooseList,
-			"release" : "cancel"
+			"release" : "cancel",
+			"page" : pageData.get("currentPage")
 			};
 		gf_Transaction_min("releaseHiox", "/releaseHiox", "POST", queryString, 1);
 	});
-	/*
 	$("#delete_btn").on("click",function(event){
 		event.preventDefault();
-		// 체크를 하나도 안했을 경우
-		if(grid.getCheckedRows().length === 0)
-			alert("하나 이상의 학생을 체크해주세요");
-        
-		// 체크리스트(griList)의 값을 index list로 변경
-		idxList = [];
-		grid.getCheckedRows().forEach(e => idxList.push(e["IDX"])); // 기본키로 바꿀것
-		var queryString = {"Message" : idxList};
 		
-		gf_Transaction_min("delete", "/deleteTest", "POST", queryString, 1);
+		chooseList = [];
+		grid.getCheckedRows().forEach(e => chooseList.push(e["choose"])); // 기본키로 바꿀것
+		var queryString = {
+			"Message" : chooseList,
+			"page" : pageData.get("currentPage")
+			};
+		
+		gf_Transaction_min("delete", "/deleteHiox", "POST", queryString, 1);
 	});
-	*/
 }
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 사용 함수 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -211,18 +175,20 @@ var gf_Transaction_min = (id, url, httpMethod, params, callback) => {
 	});
 }
 function f_callback(trId, data){
-	
 	if(data["FAIL"]) {
 		alert(data["FAIL"]);
 	}
-	
+
 	switch(trId) {
 		case "searchHiox" :
 			grid.resetData(data["SUCC"]);
 			makeBtnList(data["pageList"]);
 			break;
 		case "releaseHiox" :
-			grid.resetData(data["SUCC"]);
+			pageSetAndTrans(pageData.get("currentPage"));
+			break;
+		case "delete" :
+			pageSetAndTrans(pageData.get("currentPage"));
 			break;
 	}
 }
@@ -242,7 +208,7 @@ function getURL(data) {
 		dataMap.set("start_date", $("#start_date").val());
 	else
 		dataMap.delete("start_date");
-	
+
 	if($("#end_date").val() !== "")
 		dataMap.set("end_date", $("#end_date").val());
 	else
@@ -268,8 +234,8 @@ function getURL(data) {
 // 화면에 버튼 목록 만듬
 function makeBtnList(data) {
 	// 전역 맵 변수에 값 저장
-	pageFirstLast.set("firstPage", data[0]);
-	pageFirstLast.set("lastPage", data[1]);
+	pageData.set("firstPage", data[0]);
+	pageData.set("lastPage", data[1]);
 	// 기존에 존재하던 버튼 목록 지움
 	var btnlist = document.getElementsByClassName("page");
 	var len = btnlist.length;
@@ -291,9 +257,13 @@ function makeBtnList(data) {
 		pagingArea.appendChild(btn);
 	}
 }
-
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~ 팝업 창 연동 함수 ~~~~~~~~~~~~~~~~~~~~~~~~~~
-// 팝업 창으로 넘어온 값이 메인 페이지의 hidden 필드에 저장됨
+function pageSetAndTrans(page) {
+	pageData.set("currentPage", page);
+	dataMap.set("page", page);
+	var data = Object.fromEntries(dataMap);
+	gf_Transaction_min("searchHiox", "/selectHiox", "POST", data, 1);
+}
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~ 외적 편의 함수 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 function listMapToJson(list) {
 	let csv_str = "";
 	csv_str += "idx,name,code,score\n";
@@ -309,7 +279,3 @@ function listMapToJson(list) {
 	})
 	return csv_str;
 }
-// ~~~~~~~~~~~~~~~~~~~~~~~~~ 버튼 클릭 이벤트  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-$(document).ready(function() {
-
-})

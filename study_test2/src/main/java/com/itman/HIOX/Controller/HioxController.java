@@ -24,13 +24,13 @@ import com.itman.HIOX.util.Paging;
 public class HioxController {
 	@Autowired
 	private HioxService service;
-	
 	private Paging paging;
 	
 	@RequestMapping(value="/hiox")
-	public String main(Model model, HttpServletRequest req, HttpServletResponse rep) {
+	public String main(Model model) {
 		if(paging == null) {
-			PagingAlloc();
+			// 첫 페이지는 아무런 조건 없는 빈 맵 객체 전달
+			paging = new Paging(service.getTotalCount(new HashMap<String, Object>()));
 		}
 		
 		Map<String, List<String>> cdList = getCdList();
@@ -48,9 +48,13 @@ public class HioxController {
 		Map<String,Object> msg = new HashMap<String, Object>();
 		try {
 			params.put("pageSize", paging.getPageSize());
-			
-			msg.put("SUCC", service.select(params));
+			// 검색 조건 추가 시 조건에 맞는 row수 재계산
+			paging.setTotalRecord(service.getTotalCount(params));
+			// 범위 밖 페이지 입력시 예외처리
 			paging.setCurrentPage(Integer.parseInt(String.valueOf(params.get("page"))));
+			params.put("page", paging.getCurrentPage());
+
+			msg.put("SUCC", service.select(params));
 			msg.put("pageList", paging.pageList());
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -70,8 +74,20 @@ public class HioxController {
 			else if(params.get("release").equals("cancel")){
 				service.releaseCancelHiox(list);
 			}
-				
-			//msg.put("SUCC", service.selectAll());
+		} catch (Exception e) {
+			e.printStackTrace();
+			msg.put("FAIL", "non_data");
+		}
+		return msg;
+	}
+	@RequestMapping(value="deleteHiox", method=RequestMethod.POST, headers="Accept=application/json",produces = "application/json")
+	@ResponseBody
+	public Map<String,Object> deleteHiox(@RequestBody Map<String, Object> params, Model model) {
+		Map<String,Object> msg = new HashMap<String, Object>();
+		List<Integer> list = (ArrayList<Integer>) params.get("Message");
+		try {
+			// id 기반 지우는 쿼리 작성
+			service.deleteHiox(list);
 		} catch (Exception e) {
 			e.printStackTrace();
 			msg.put("FAIL", "non_data");
@@ -106,9 +122,5 @@ public class HioxController {
 		cdList.put("size_list", size_list);
 		
 		return cdList;
-	}
-	private void PagingAlloc() {
-		//paging = new Paging(service.getTotalCount());
-		paging = new Paging(2001);
 	}
 }

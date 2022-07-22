@@ -1,6 +1,5 @@
 package com.itman.HIOX.service;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -14,40 +13,39 @@ public class HioxServiceImpl implements HioxService {
 	
 	@Autowired
 	private HioxMapper mapper;
-	
+	// 재질/두께/크기유형 리스트 조회
 	@Override
-	public List<Map<String, Object>> selectAll(Map<String, Object> params) throws Exception {
-		int offset = calOffset(params.get("page"), params.get("pageSize"));
-		params.put("offset", offset);
-		return mapper.selectAll(params);
+	public List<Map<String, Object>> cd_List() {
+		return mapper.cd_List();
 	}
-
+	// 조건에 맞는 row 숫자 조회
+	@Override
+	public int getTotalCount(Map<String, Object> params) {
+		return mapper.getTotalCount(params);
+	}
+	// 조건에 맞는 row 조회
 	@Override
 	public List<Map<String, Object>> select(Map<String, Object> params) throws Exception {
 		int offset = calOffset(params.get("page"), params.get("pageSize"));
 		params.put("offset", offset);
 		return mapper.select(params);
 	}
-
-	@Override
-	public List<Map<String, Object>> cd_List() {
-		return mapper.cd_List();
-	}
-
+	// 선택한 row 출고여부 1로 update
 	@Override
 	public boolean releaseHiox(List<Integer> list) {
 		return mapper.releaseHiox(list);
 	}
-
+	// 선택한 row 출고여부 0으로 update
 	@Override
 	public boolean releaseCancelHiox(List<Integer> list) {
 		return mapper.releaseCancelHiox(list);
 	}
-
+	// 선택한 row 삭제
 	@Override
-	public int getTotalCount() {
-		return mapper.getTotalCount();
+	public boolean deleteHiox(List<Integer> list) {
+		return mapper.deleteHiox(list);
 	}
+	// 오프셋 계산
 	private int calOffset(Object ob, Object size) {
 		int offset = 0;
 		int pagesize = 0;
@@ -65,5 +63,4 @@ public class HioxServiceImpl implements HioxService {
 			return 0;
 		}
 	}
-
 }
