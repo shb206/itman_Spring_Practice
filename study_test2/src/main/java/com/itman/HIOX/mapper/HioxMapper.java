@@ -5,7 +5,7 @@ import java.util.Map;
 
 public interface HioxMapper {
 	// 테이블 전체 출력
-	public List<Map<String, Object>> selectAll(int offset) throws Exception;
+	public List<Map<String, Object>> selectAll(Map<String, Object> params) throws Exception;
 	// 검색 row 출력
 	public List<Map<String, Object>> select(Map<String, Object> params);
 	// 재질 리스트 출력

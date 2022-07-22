@@ -1,7 +1,6 @@
 package com.itman.HIOX.Controller;
 
 
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -25,74 +24,34 @@ import com.itman.HIOX.util.Paging;
 public class HioxController {
 	@Autowired
 	private HioxService service;
+	
 	private Paging paging;
-	private int page = 0;
 	
 	@RequestMapping(value="/hiox")
 	public String main(Model model, HttpServletRequest req, HttpServletResponse rep) {
 		if(paging == null) {
 			PagingAlloc();
 		}
-		LocalDate now = LocalDate.now();
 		
 		Map<String, List<String>> cdList = getCdList();
-		List<Integer> pageList = new ArrayList<Integer>();
 		
 		model.addAttribute("texture_list", cdList.get("texture_list"));
 		model.addAttribute("thickness_list", cdList.get("thickness_list"));
 		model.addAttribute("size_list", cdList.get("size_list"));
-
-		//paging.setTotalRecord(service.getTotalCount());
-		if(req.getParameter("page") != null) {
-			try {
-				page = Integer.parseInt(req.getParameter("page"));
-				paging.setCurrentPage(page);
-			} 
-			catch(NumberFormatException e) {
-				paging.setCurrentPage(1);
-			}
-		}
-		else
-			paging.setCurrentPage(1);
-		
-		pageList = paging.pageList();
-		
-//		System.out.println("넘어온 페이지 : " + req.getParameter("page"));
-//		System.out.println("세팅된 페이지 : " + paging.getCurrentPage());
-//		System.out.println("마지막 페이지 : " + pageList.get(pageList.size()-1));
-		
-		model.addAttribute("pageList", pageList);
-		model.addAttribute("lastPage", pageList.get(pageList.size()-1));
-		model.addAttribute("today", now);
 		
 		return "hioxMain";
 	}
-	@RequestMapping(value="selectHioxAll", method=RequestMethod.POST, headers="Accept=application/json",produces = "application/json")
-	@ResponseBody
-	public Map<String,Object> selectAll(@RequestBody Map<String, Object> params, Model model) {
-		Map<String,Object> msg = new HashMap<String, Object>();
-		try {
-			msg.put("SUCC", service.selectAll(params));
-		} catch (Exception e) {
-			e.printStackTrace();
-			msg.put("FAIL", "non_data");
-		}
-		return msg;
-	}
+
 	@RequestMapping(value="selectHiox", method=RequestMethod.POST, headers="Accept=application/json",produces = "application/json")
 	@ResponseBody
 	public Map<String,Object> select(@RequestBody Map<String, Object> params, Model model) {
 		Map<String,Object> msg = new HashMap<String, Object>();
 		try {
-			if(params.get("texture").equals("---재질---"))
-				params.remove("texture");
-			if(params.get("thickness").equals("---두께---"))
-				params.remove("thickness");
-			if(params.get("size").equals("---크기유형---"))
-				params.remove("size");
-
-			//System.out.println(params);
+			params.put("pageSize", paging.getPageSize());
+			
 			msg.put("SUCC", service.select(params));
+			paging.setCurrentPage(Integer.parseInt(String.valueOf(params.get("page"))));
+			msg.put("pageList", paging.pageList());
 		} catch (Exception e) {
 			e.printStackTrace();
 			msg.put("FAIL", "non_data");
@@ -149,7 +108,7 @@ public class HioxController {
 		return cdList;
 	}
 	private void PagingAlloc() {
-		paging = new Paging(service.getTotalCount());
-		//paging = new Paging(200);
+		//paging = new Paging(service.getTotalCount());
+		paging = new Paging(2001);
 	}
 }

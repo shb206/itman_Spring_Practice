@@ -5,7 +5,7 @@
 		SELECT COUNT(*) FROM HIOX_TEST
 	</select>
 	
-	<select id="selectAll" parameterType="int" resultType="hashMap">
+	<select id="selectAll" parameterType="hashMap" resultType="hashMap">
 		SELECT 
 			choose, 
 			date_format(receive_date, '%Y-%m-%d %T') as receive_date,
@@ -16,7 +16,7 @@
 			date_format(release_date, '%Y-%m-%d %T') as release_date
 		FROM 
 			HIOX_TEST
-		LIMIT 10 OFFSET #{value}
+		LIMIT #{pageSize} OFFSET #{offset}
 	</select>
 	
 	<select id="select" parameterType="hashMap" resultType="hashMap">
@@ -34,9 +34,14 @@
 			<if test="texture != null">AND texture = #{texture}</if>
 			<if test="thickness != null">AND thickness = #{thickness}</if>
 			<if test="size != null">AND size = #{size}</if>
-			 AND date_format(receive_date, '%Y-%m-%d') <![CDATA[ >= ]]> #{start_date}
-			 AND date_format(receive_date, '%Y-%m-%d') <![CDATA[ <= ]]> #{end_date}
+			<if test="start_date != null">
+				AND date_format(receive_date, '%Y-%m-%d') <![CDATA[ >= ]]> #{start_date}
+			</if>
+			<if test="end_date != null">
+			 	AND date_format(receive_date, '%Y-%m-%d') <![CDATA[ <= ]]> #{end_date}
+			 </if>
 		</where>
+		LIMIT #{pageSize} OFFSET #{offset}
 	</select>
 	
 	<select id="cd_List" resultType="hashMap">

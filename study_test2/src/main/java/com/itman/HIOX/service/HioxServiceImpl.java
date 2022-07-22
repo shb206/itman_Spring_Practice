@@ -17,21 +17,15 @@ public class HioxServiceImpl implements HioxService {
 	
 	@Override
 	public List<Map<String, Object>> selectAll(Map<String, Object> params) throws Exception {
-		int offset = 1;
-		String page = String.valueOf(params.get("page"));
-		List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
-		try { 
-			offset = Integer.parseInt(page);
-			offset = (offset - 1)*10;
-			return mapper.selectAll(offset);
-		}
-		catch(NumberFormatException e) {
-			return mapper.selectAll(offset);
-		}
+		int offset = calOffset(params.get("page"), params.get("pageSize"));
+		params.put("offset", offset);
+		return mapper.selectAll(params);
 	}
 
 	@Override
 	public List<Map<String, Object>> select(Map<String, Object> params) throws Exception {
+		int offset = calOffset(params.get("page"), params.get("pageSize"));
+		params.put("offset", offset);
 		return mapper.select(params);
 	}
 
@@ -53,6 +47,23 @@ public class HioxServiceImpl implements HioxService {
 	@Override
 	public int getTotalCount() {
 		return mapper.getTotalCount();
+	}
+	private int calOffset(Object ob, Object size) {
+		int offset = 0;
+		int pagesize = 0;
+		String page = String.valueOf(ob);
+		String sizeString = String.valueOf(size);
+		try { 
+			offset = Integer.parseInt(page);
+			pagesize = Integer.parseInt(sizeString);
+			// 데이터 페이징을 위한 오프셋
+			offset = (offset - 1)*pagesize;
+			return offset;
+		}
+		// page 파라미터가 숫자로 변환할 수 없는 값이 들어왔을 경우
+		catch(NumberFormatException e) {
+			return 0;
+		}
 	}
 
 }

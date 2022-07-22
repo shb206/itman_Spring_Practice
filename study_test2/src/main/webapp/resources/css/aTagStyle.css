@@ -1,0 +1,18 @@
+@charset "UTF-8";
+a:link {
+  color : rgba(153, 102, 255, 1);
+  text-decoration: none;
+}
+a:visited {
+  color : black;
+  text-decoration: none;
+}
+a:hover {
+  color : red;
+  text-decoration: none;
+}
+a:active {
+  color : green;
+  text-decoration: none;
+}
+a { font-size:20px; }

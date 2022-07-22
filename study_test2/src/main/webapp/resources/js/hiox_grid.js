@@ -1,7 +1,8 @@
 // 전역 변수
 var grid = null;
 let gridList=[];
-let check = true;
+let dataMap = new Map();
+let pageFirstLast = new Map();
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 기본 세팅 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 $(function(){
 	initPrams();
@@ -9,27 +10,10 @@ $(function(){
 	initEvents();
 });
 
-// 전체 리스트 표시
-function tui_showInfo() {
-	var urlString = window.location.href;
-	const url = new URL(urlString);
-	var page = url.searchParams.get('page') === null ? 1 : url.searchParams.get('page');
-	
-	// 마지막 페이지 파라미터 가져와서 최대 페이지 다음 페이지는 안보아게 하기
-	//if(page > "${lastPage}") {
-	//	page = "${lastPage}";
-	//}
-	
-	var queryString = {
-		"Message" : "showInfo",
-		"page" : page
-	};
-	
-	gf_Transaction_min("show_info", "/selectHioxAll", "POST", queryString, 1);
-}
-
 function initDatas(){
-	tui_showInfo();
+	dataMap.clear();
+	var data = { "page" : 1 };
+	gf_Transaction_min("searchHiox", "/selectHiox", "POST", data, 1);
 }
 
 function initPrams(){
@@ -91,6 +75,93 @@ function initEvents(){
 			    }
 		    }})
 	});
+	$("#reset_btn").on("click",function(event){
+		event.preventDefault();
+		
+		initDatas();
+	});
+	$("#search_btn").on("click",function(event){
+		event.preventDefault();
+		
+		getURL();
+		var data = Object.fromEntries(dataMap);
+		gf_Transaction_min("searchHiox", "/selectHiox", "POST", data, 1);
+	});
+	// 페이지 버튼 클릭 이벤트
+	$("#pagingArea").on("click",".page", function(){
+		event.preventDefault();
+
+		dataMap.set("page", this.value);
+	 	var data = Object.fromEntries(dataMap);
+	 	gf_Transaction_min("searchHiox", "/selectHiox", "POST", data, 1);
+	});
+	// 첫번째 페이지로
+	$("#firstPage").on("click",function(event){
+		event.preventDefault();
+		
+		dataMap.set("page", 1);
+		var data = Object.fromEntries(dataMap);
+	 	gf_Transaction_min("searchHiox", "/selectHiox", "POST", data, 1);
+	});
+	// 이전 페이지 리스트
+	$("#prevPageList").on("click",function(event){
+		event.preventDefault();
+		
+		dataMap.set("page", pageFirstLast.get("firstPage")-1);
+		var data = Object.fromEntries(dataMap);
+	 	gf_Transaction_min("searchHiox", "/selectHiox", "POST", data, 1);
+	});
+	// 다음 페이지 리스트
+	$("#nextPageList").on("click",function(event){
+		event.preventDefault();
+		
+		dataMap.set("page", pageFirstLast.get("lastPage")+1);
+		var data = Object.fromEntries(dataMap);
+	 	gf_Transaction_min("searchHiox", "/selectHiox", "POST", data, 1);
+	});
+	// 마지막 페이지로
+	$("#lastPage").on("click",function(event){
+		event.preventDefault();
+		
+		dataMap.set("page", 99999999);
+		var data = Object.fromEntries(dataMap);
+	 	gf_Transaction_min("searchHiox", "/selectHiox", "POST", data, 1);
+	});
+	$("#release_btn").on("click",function(event){
+		event.preventDefault();
+		chooseList = [];
+		grid.getCheckedRows().forEach(e => chooseList.push(e["choose"])); // 기본키로 바꿀것
+		var queryString = {
+			"Message" : chooseList,
+			"release" : "release"
+			};
+		gf_Transaction_min("releaseHiox", "/releaseHiox", "POST", queryString, 1);
+	});
+	$("#release_cancel_btn").on("click",function(event){
+		event.preventDefault();
+		chooseList = [];
+		grid.getCheckedRows().forEach(e => chooseList.push(e["choose"])); // 기본키로 바꿀것
+		var queryString = {
+			"Message" : chooseList,
+			"release" : "cancel"
+			};
+		gf_Transaction_min("releaseHiox", "/releaseHiox", "POST", queryString, 1);
+	});
+	/*
+	$("#delete_btn").on("click",function(event){
+		event.preventDefault();
+		// 체크를 하나도 안했을 경우
+		if(grid.getCheckedRows().length === 0)
+			alert("하나 이상의 학생을 체크해주세요");
+        
+		// 체크리스트(griList)의 값을 index list로 변경
+		idxList = [];
+		grid.getCheckedRows().forEach(e => idxList.push(e["IDX"])); // 기본키로 바꿀것
+		var queryString = {"Message" : idxList};
+		
+		gf_Transaction_min("delete", "/deleteTest", "POST", queryString, 1);
+	});
+	*/
 }
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 사용 함수 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -146,11 +217,9 @@ function f_callback(trId, data){
 	}
 	
 	switch(trId) {
-		case "show_info" :
-			grid.resetData(data["SUCC"]);
-			break;
 		case "searchHiox" :
 			grid.resetData(data["SUCC"]);
+			makeBtnList(data["pageList"]);
 			break;
 		case "releaseHiox" :
 			grid.resetData(data["SUCC"]);
@@ -166,13 +235,65 @@ function update_Ready(el) {
 	
 	window.open("/update_subView", "update_popup", "width = 500, height = 500");
 }
+// 검색 파라미터 편집
+function getURL(data) {
+	// Map 전역 변수에 키/값 설정
+	if($("#start_date").val() !== "")
+		dataMap.set("start_date", $("#start_date").val());
+	else
+		dataMap.delete("start_date");
+	
+	if($("#end_date").val() !== "")
+		dataMap.set("end_date", $("#end_date").val());
+	else
+		dataMap.delete("end_date");
+	
+	if($("#texture").val() !== "---재질---")
+		dataMap.set("texture", $("#texture").val());
+	else
+		dataMap.delete("texture");
+	
+	if($("#thickness").val() !== "---두께---")
+		dataMap.set("thickness", $("#thickness").val());
+	else
+		dataMap.delete("thickness");
+	
+	if($("#size").val() !== "---크기유형---")
+		dataMap.set("size", $("#size").val());
+	else
+		dataMap.delete("size");
+	
+	dataMap.set("page", 1);
+}
+// 화면에 버튼 목록 만듬
+function makeBtnList(data) {
+	// 전역 맵 변수에 값 저장
+	pageFirstLast.set("firstPage", data[0]);
+	pageFirstLast.set("lastPage", data[1]);
+	// 기존에 존재하던 버튼 목록 지움
+	var btnlist = document.getElementsByClassName("page");
+	var len = btnlist.length;
+		
+	for(var i = 0; i < len; i++) {
+		btnlist[0].parentNode.removeChild(btnlist[0]);
+	}
+	// 화면에 버튼 목록 새로 만듬
+	var pagingArea = document.getElementById('pagingArea');
+	var btn;
+	var text;
+	
+	for(var i = data[0]; i <= data[1]; i++) {
+		btn = document.createElement('button');
+		text = document.createTextNode(String(i));
+		btn.className = "page";
+		btn.value = String(i);
+		btn.appendChild(text);
+		pagingArea.appendChild(btn);
+	}
+}
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~ 팝업 창 연동 함수 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 // 팝업 창으로 넘어온 값이 메인 페이지의 hidden 필드에 저장됨
-window.selectPop = function() {
-	var queryString = {"Message" : $("#h_idx").val()};
-	gf_Transaction_min("selectPop", "/selectTest", "POST", queryString, 1);
-}
 function listMapToJson(list) {
 	let csv_str = "";
 	csv_str += "idx,name,code,score\n";
@@ -190,55 +311,5 @@ function listMapToJson(list) {
 }
 // ~~~~~~~~~~~~~~~~~~~~~~~~~ 버튼 클릭 이벤트  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 $(document).ready(function() {
-	$("#reset_btn").on("click",function(event){
-		event.preventDefault();
-		tui_showInfo();
-	});
-	$("#search_btn").on("click",function(event){
-		event.preventDefault();
-		var data = {
-			"start_date" : $("#start_date").val(),
-			"end_date" : $("#end_date").val(),
-			"texture" : $("#texture").val(),
-			"thickness" : $("#thickness").val(),
-			"size" : $("#size").val()
-		}
-		//console.log(data);
-		gf_Transaction_min("searchHiox", "/selectHiox", "POST", data, 1);
-	});
-	$("#release_btn").on("click",function(event){
-		event.preventDefault();
-		chooseList = [];
-		grid.getCheckedRows().forEach(e => chooseList.push(e["choose"])); // 기본키로 바꿀것
-		var queryString = {
-			"Message" : chooseList,
-			"release" : "release"
-			};
-		gf_Transaction_min("releaseHiox", "/releaseHiox", "POST", queryString, 1);
-	});
-	$("#release_cancel_btn").on("click",function(event){
-		event.preventDefault();
-		chooseList = [];
-		grid.getCheckedRows().forEach(e => chooseList.push(e["choose"])); // 기본키로 바꿀것
-		var queryString = {
-			"Message" : chooseList,
-			"release" : "cancel"
-			};
-		gf_Transaction_min("releaseHiox", "/releaseHiox", "POST", queryString, 1);
-	});
-	/*
-	$("#delete_btn").on("click",function(event){
-		event.preventDefault();
-		// 체크를 하나도 안했을 경우
-		if(grid.getCheckedRows().length === 0)
-			alert("하나 이상의 학생을 체크해주세요");
-        
-		// 체크리스트(griList)의 값을 index list로 변경
-		idxList = [];
-		grid.getCheckedRows().forEach(e => idxList.push(e["IDX"])); // 기본키로 바꿀것
-		var queryString = {"Message" : idxList};
-		
-		gf_Transaction_min("delete", "/deleteTest", "POST", queryString, 1);
-	});
-	*/
+
 })
